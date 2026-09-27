@@ -1,61 +1,39 @@
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
+#include <vector>
 using namespace std;
-class Student {
-private:
-    int rollNo;
-    string name;
-    double marks;
-public:
-    Student() : rollNo(0), marks(0.0) {}
-    Student(int r, string n, double m)
-        : rollNo(r), name(n), marks(m) {}
-    void saveToFile(ofstream& out) const {
-        out << rollNo << ',' << name << ',' << marks << '\n';
-    }
-    bool loadFromLine(const string& line) {
-        string rollText;
-        string marksText;
-        stringstream stream(line);
-        if (!getline(stream, rollText, ',')) return false;
-        if (!getline(stream, name, ',')) return false;
-        if (!getline(stream, marksText)) return false;
-        rollNo = stoi(rollText);
-        marks = stod(marksText);
-        return true;
-    }
-    void display() const {
-        cout << "Roll: " << rollNo
-             << " | Name: " << name
-             << " | Marks: " << marks << endl;
-    }
+struct LogEntry {
+    string line;
 };
 int main() {
-    ofstream outFile("students.csv");
-    if (!outFile) {
-        cerr << "Unable to open students.csv for writing." << endl;
+    ofstream sampleLog("server.log");
+    if (!sampleLog) {
+        cerr << "Unable to create log file." << endl;
         return 1;
     }
-    Student s1(101, "Rahul Patil", 85.5);
-    Student s2(102, "Priya Sharma", 92.0);
-    Student s3(103, "Amit Kulkarni", 78.5);
-    s1.saveToFile(outFile);
-    s2.saveToFile(outFile);
-    s3.saveToFile(outFile);
-    outFile.close();
-    ifstream inFile("students.csv");
-    if (!inFile) {
-        cerr << "Unable to open students.csv for reading." << endl;
+    sampleLog << "2026-09-09 08:00:00 INFO Server started\n";
+    sampleLog << "2026-09-09 08:10:00 WARNING High memory usage\n";
+    sampleLog << "2026-09-09 08:20:00 ERROR Database connection failed\n";
+    sampleLog << "2026-09-09 08:30:00 INFO Backup completed\n";
+    sampleLog << "2026-09-09 08:40:00 CRITICAL Disk space low\n";
+    sampleLog.close();
+    ifstream logFile("server.log");
+    if (!logFile) {
+        cerr << "Unable to open server.log." << endl;
         return 1;
     }
-    cout << "=== Student Report ===" << endl;
+    vector<LogEntry> errors;
     string line;
-    while (getline(inFile, line)) {
-        Student student;
-        if (student.loadFromLine(line)) {
-            student.display();
+    while (getline(logFile, line)) {
+        if (line.find("ERROR") != string::npos ||
+            line.find("CRITICAL") != string::npos) {
+            errors.push_back({line});
         }
     }
+    cout << "=== Critical Log Events ===" << endl;
+    for (const auto& entry : errors) {
+        cout << entry.line << endl;
+    }
+    cout << "Total critical events: " << errors.size() << endl;
 }
